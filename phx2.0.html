@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SMART AI PREDICTOR  </title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Roboto:wght@400;500&display=swap');
+
+      :root {
+        --bg-dark: #0d0d1a;
+        --primary: #00ffdd;
+        --secondary: #ff00ff;
+        --text-light: #e0e0e0;
+        --text-dark: #cccccc;
+        --card-bg: rgba(20, 20, 40, 0.7);
+        --border-color: rgba(0, 255, 221, 0.3);
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body { 
+        font-family: 'Roboto', sans-serif; 
+        background-color: var(--bg-dark); 
+        color: var(--text-light); 
+        text-align: center; 
+        user-select: none; 
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 15px;
+        background-image: radial-gradient(circle at 1px 1px, rgba(0, 255, 221, 0.08) 1px, transparent 0);
+        background-size: 25px 25px;
+      }
+      .hidden { display: none !important; }
+      @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+      .main-container {
+          width: 100%;
+          max-width: 400px;
+          animation: fadeIn 0.5s ease-in-out;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+      }
+      .header { 
+        font-family: 'Orbitron', sans-serif;
+        font-size: 22px; font-weight: 700; color: var(--primary);
+        text-shadow: 0 0 8px var(--primary);
+      }
+      .card {
+          background: var(--card-bg);
+          border: 1px solid var(--border-color);
+          border-radius: 15px;
+          padding: 25px;
+          box-shadow: 0 0 20px rgba(0, 255, 221, 0.05);
+      }
+      .status-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          text-align: center;
+      }
+      .status-item h3 {
+          font-size: 14px; color: var(--text-dark);
+          margin-bottom: 8px; font-weight: 500; text-transform: uppercase;
+      }
+      .status-item p {
+          font-family: 'Orbitron', sans-serif; font-size: 24px;
+          font-weight: 700; color: var(--text-light);
+      }
+      
+      .prediction-card {
+          padding: 20px;
+      }
+
+      .prediction-circle { 
+        width: 220px; height: 220px; 
+        border-radius: 50%; margin: 0 auto; 
+        display: flex; align-items: center; justify-content: center; 
+        border: 5px solid var(--primary);
+        box-shadow: 0 0 30px var(--primary), inset 0 0 20px rgba(0, 255, 221, 0.3); 
+        color: white; font-size: 42px; font-weight: 900;
+        font-family: 'Orbitron', sans-serif; transition: all 0.3s ease;
+        text-align: center; white-space: pre-line;
+      }
+      .glitch {
+        animation: glitch 1.5s linear infinite; font-size: 24px !important;
+        text-transform: uppercase;
+      }
+      @keyframes glitch{ 2%,64%{transform: translate(2px,0) skew(0deg);} 4%,60%{transform: translate(-2px,0) skew(0deg);} 62%{transform: translate(0,0) skew(5deg);} }
+      .glitch:before, .glitch:after{ content: attr(data-text); position: absolute; left: 0; width: 100%; height: 100%; background: transparent; overflow: hidden; }
+      .glitch:before{ left: 3px; text-shadow: -2px 0 var(--secondary); animation: noise-anim-1 2s linear infinite alternate-reverse; }
+      .glitch:after{ left: -3px; text-shadow: -2px 0 var(--primary); animation: noise-anim-2 3s linear infinite alternate-reverse; }
+      @keyframes noise-anim-1{ 0%,100%{clip-path:inset(33% 0 33% 0)} 33%{clip-path:inset(0 0 66% 0)} 66%{clip-path:inset(66% 0 0 0)} }
+      @keyframes noise-anim-2{ 0%,100%{clip-path:inset(66% 0 0 0)} 33%{clip-path:inset(33% 0 33% 0)} 66%{clip-path:inset(0 0 66% 0)} }
+
+      .button { 
+        background: var(--primary); color: #000; 
+        padding: 15px 40px; font-size: 18px; font-weight: 700;
+        border: none; border-radius: 12px; 
+        cursor: pointer; transition: all 0.3s; width: 100%;
+      }
+      .button:hover { background: #fff; box-shadow: 0 0 20px var(--primary); transform: translateY(-2px); }
+      
+      .toast {
+        position: fixed; bottom: -100px; left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(45deg, var(--secondary), var(--primary));
+        color: #000; padding: 14px 26px; border-radius: 8px;
+        font-weight: 700; font-size: 16px;
+        z-index: 9999;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        transition: bottom 0.5s ease-in-out;
+      }
+      .toast.show {
+        bottom: 30px;
+      }
+
+      .history-card {
+        max-height: 180px;
+        overflow-y: auto;
+        font-family: 'Orbitron', sans-serif;
+        font-size: 14px;
+        text-align: left;
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main-container" id="mainContent">
+      <div class="header">SMART AI PREDICTOR </div>
+
+      <div class="card">
+        <div class="status-grid">
+          <div class="status-item">
+            <h3>CURRENT PERIOD</h3>
+            <p id="period">Loading...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card prediction-card">
+        <div class="prediction-circle" id="predictionCircle" data-text="ANALYSING">
+          ANALYSING
+        </div>
+      </div>
+
+      <button class="button" id="getResultBtn">GET RESULT</button>
+
+      <div class="card history-card" id="historyCard">
+        <h3 style="color:var(--secondary);margin-bottom:10px;">Prediction History</h3>
+        <ul id="historyList"></ul>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const apiUrl = 'https://draw.ar-lottery01.com/WinGo/WinGo_1M/GetHistoryIssuePage.json';
+        let currentPeriod = '', predictedResult = '', lastShownPeriod = '';
+
+        const periodEl = document.getElementById('period');
+        const predictionCircleEl = document.getElementById('predictionCircle');
+        const getResultBtn = document.getElementById('getResultBtn');
+        const toastEl = document.getElementById('toast');
+        const historyList = document.getElementById('historyList');
+
+        function getPrediction(history) {
+          if (!history || history.length < 10) {
+              return { result: 'SKIP', confidence: 50 };
+          }
+
+          let bigCount = 0, smallCount = 0;
+          const recentRounds = history.slice(0, 20);
+          for (let round of recentRounds) {
+              const num = Number(round.number);
+              if (num >= 5) bigCount++;
+              else smallCount++;
+          }
+
+          let streak = 0;
+          for (let i = 0; i < 5; i++) {
+              const num = Number(history[i].number);
+              if ((num >= 5 && bigCount > smallCount) || (num < 5 && smallCount > bigCount)) {
+                  streak++;
+              }
+          }
+
+          let probBig = bigCount / recentRounds.length + streak * 0.05;
+          let probSmall = smallCount / recentRounds.length + (5 - streak) * 0.05;
+
+          const noise = (Math.random() - 0.5) * 0.1;
+          probBig += noise;
+
+          const total = probBig + probSmall;
+          probBig /= total;
+          probSmall /= total;
+
+          const confidence = Math.max(probBig, probSmall) * 100;
+          let result = probBig > probSmall ? 'BIG' : 'SMALL';
+
+          if (confidence < 65) {
+              result = 'SKIP';
+          }
+
+          return { result, confidence: Math.round(confidence) };
+        }
+
+        async function fetchAndPredict() {
+          try {
+              const response = await fetch(`${apiUrl}?ts=${Date.now()}`);
+              const data = await response.json();
+              if (!data?.data?.list?.length) return;
+
+              const livePeriod = String(BigInt(data.data.list[0].issueNumber) + 1n);
+
+              if (livePeriod !== currentPeriod) {
+                  currentPeriod = livePeriod;
+                  lastShownPeriod = ''; 
+                  
+                  periodEl.innerText = currentPeriod;
+                  
+                  predictionCircleEl.classList.add('glitch');
+                  predictionCircleEl.innerText = 'ANALYSING';
+                  predictionCircleEl.dataset.text = 'ANALYSING';
+                  
+                  setTimeout(() => {
+                      const prediction = getPrediction(data.data.list);
+                      predictedResult = prediction.result;
+
+                      predictionCircleEl.classList.remove('glitch');
+                      if (prediction.result === 'SKIP') {
+                          predictionCircleEl.innerText = "SKIP";
+                      } else {
+                          predictionCircleEl.innerText = `${prediction.result}\n${prediction.confidence}%`;
+                      }
+
+                      // Add to history
+                      const li = document.createElement('li');
+                      li.textContent = `[${currentPeriod}] → ${prediction.result}${prediction.result !== 'SKIP' ? ' ('+prediction.confidence+'%)' : ''}`;
+                      historyList.prepend(li);
+                      if (historyList.children.length > 20) {
+                          historyList.removeChild(historyList.lastChild);
+                      }
+                  }, 2000);
+              }
+          } catch (e) { 
+              console.error('Data fetch error:', e);
+              predictionCircleEl.innerText = 'ERROR';
+          }
+        }
+        
+        function showToast(message) {
+            toastEl.textContent = message;
+            toastEl.classList.add('show');
+            setTimeout(() => {
+                toastEl.classList.remove('show');
+            }, 2200);
+        }
+
+        getResultBtn.addEventListener('click', () => {
+            if (predictionCircleEl.classList.contains('glitch')) {
+                showToast('AI is processing, please wait...');
+                return; 
+            }
+            
+            if (lastShownPeriod === currentPeriod) {
+                showToast('WAIT FOR THE NEXT ROUND'); 
+                return; 
+            }
+            
+            lastShownPeriod = currentPeriod;
+            showToast(`CONFIRMED RESULT: ${predictedResult}`);
+        });
+
+        fetchAndPredict();
+        setInterval(fetchAndPredict, 5000);
+      });
+    </script>
+  </body>
+</html>
